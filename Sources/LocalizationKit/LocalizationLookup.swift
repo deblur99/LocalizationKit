@@ -32,13 +32,17 @@ public struct LocalizationLookup {
         self.table = table
     }
 
-    public init(bundle: Bundle, languageManager: LanguageManager) {
+    public init(
+        bundle: Bundle,
+        languageManager: LanguageManager,
+        table: String? = nil
+    ) {
         self.init(
             bundle: bundle,
             defaultsKey: languageManager.defaultsKey,
             configuration: languageManager.configuration,
             defaults: languageManager.defaults,
-            table: nil
+            table: table
         )
     }
 

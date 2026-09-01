@@ -122,6 +122,67 @@ struct LocalizationKitTests {
         #expect(preference == .system)
     }
 
+    @Test func appLocalizationConfigurationResolvesLanguage() {
+        let defaults = UserDefaults(suiteName: "LocalizationKitTests.appConfig")!
+        defaults.removePersistentDomain(forName: "LocalizationKitTests.appConfig")
+        defaults.set(AppLanguage.korean.rawValue, forKey: "app.language")
+
+        let configuration = AppLocalizationConfiguration(
+            defaultsKey: "app.language",
+            menu: bslMenu
+        )
+
+        #expect(configuration.loadPreference(defaults: defaults) == .explicit(.korean))
+        #expect(configuration.resolvedLanguage(defaults: defaults) == .korean)
+    }
+
+    @Test func moduleL10nMatchesLookup() {
+        let configuration = AppLocalizationConfiguration(
+            defaultsKey: "test.moduleL10n",
+            menu: bslMenu
+        )
+        let defaults = UserDefaults(suiteName: "LocalizationKitTests.moduleL10n")!
+        defaults.removePersistentDomain(forName: "LocalizationKitTests.moduleL10n")
+        defaults.set(AppLanguage.english.rawValue, forKey: "test.moduleL10n")
+
+        let l10n = configuration.makeModuleL10n(
+            bundle: .module,
+            table: "LocalizationUI",
+            defaults: defaults
+        )
+        #expect(l10n.trSync("Language") == "Language")
+    }
+
+    @Test @MainActor func localizedModuleProvidesSharedManager() {
+        enum TestModule: LocalizedModule {
+            static let localization = AppLocalizationConfiguration(
+                defaultsKey: "test.localizedModule",
+                menu: LanguageMenuConfiguration(menuWhitelist: [.english])
+            )
+            static let stringsBundle = Bundle.module
+            static let stringsTable = "LocalizationUI"
+        }
+
+        let first = TestModule.languageManager
+        let second = TestModule.languageManager
+        #expect(first === second)
+        #expect(TestModule.l10n.trSync("Language") == "Language")
+    }
+
+    @Test func l10nNamespaceForwardsToModuleL10n() {
+        enum TestModule: LocalizedModule {
+            static let localization = AppLocalizationConfiguration(
+                defaultsKey: "test.l10nNamespace",
+                menu: LanguageMenuConfiguration(menuWhitelist: [.english])
+            )
+            static let stringsBundle = Bundle.module
+            static let stringsTable = "LocalizationUI"
+        }
+
+        typealias L10n = L10nNamespace<TestModule>
+        #expect(L10n.trSync("Language") == "Language")
+    }
+
     @Test @MainActor func kitUILookupResolvesEnglishStrings() {
         let defaults = UserDefaults(suiteName: "LocalizationKitTests.kitUI")!
         defaults.removePersistentDomain(forName: "LocalizationKitTests.kitUI")

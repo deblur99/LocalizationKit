@@ -28,7 +28,55 @@ targets: [
 
 Or add the package in Xcode: **File → Add Package Dependencies…** and enter the repository URL.
 
-## Quick start
+## Recommended adoption (minimal boilerplate)
+
+Register your app once, then use `LocalizedModule` helpers instead of repeating `defaultsKey`, whitelist, and `LocalizationLookup` wiring.
+
+### 1. Register the app
+
+```swift
+import LocalizationKit
+
+enum MyCoreLocalization: LocalizedModule {
+    static let localization = AppLocalizationConfiguration(
+        defaultsKey: "myapp.languagePreference",
+        menu: LanguageMenuConfiguration(
+            menuWhitelist: [.korean, .english, .japanese],
+            fallbackLanguage: .english
+        )
+    )
+    static let stringsBundle = Bundle.module
+}
+
+public typealias L10n = L10nNamespace<MyCoreLocalization>
+```
+
+### 2. Shared manager and SwiftUI
+
+```swift
+@MainActor
+let languageManager = MyCoreLocalization.languageManager
+
+ContentView()
+    .appLanguageEnvironment(MyCoreLocalization.self)
+
+LanguageMenuButton(module: MyCoreLocalization.self)
+```
+
+### 3. Localized strings
+
+```swift
+let title = L10n.trSync("settings.title")
+Text(l10n: "settings.title", module: MyCoreLocalization.self)
+```
+
+### 4. Business logic without a manager
+
+```swift
+let language = MyCoreLocalization.resolvedLanguage()
+```
+
+## Manual setup (lower-level API)
 
 ### 1. Configure the language menu whitelist
 
@@ -85,6 +133,9 @@ LanguageMenuButton(languageManager: languageManager)
 
 ## Features
 
+- **AppLocalizationConfiguration** — bundles `defaultsKey` + menu whitelist with factory helpers
+- **LocalizedModule** — one-time module registration protocol
+- **ModuleL10n** / **L10nNamespace** — app/module string lookup without custom facades
 - **AppLanguage** — ~42 language catalog with locale matching and system-language resolution
 - **LanguagePreference** — `system` or explicit language, with legacy value migration
 - **LanguageMenuConfiguration** — per-app whitelist and fallback policy
