@@ -67,14 +67,15 @@ struct LocalizationKitTests {
 
     @Test func everyCatalogLanguageHasLocalizationUIStrings() {
         for language in AppLanguage.allCases {
-            let lprojPath = Bundle.module.path(
-                forResource: language.rawValue,
-                ofType: "lproj"
+            let localizedBundle = LocalizationLookup.localizedBundle(
+                in: .module,
+                forLprojResourceName: language.rawValue
             )
-            #expect(lprojPath != nil, "Missing \(language.rawValue).lproj for \(language)")
+            #expect(localizedBundle != nil, "Missing \(language.rawValue).lproj for \(language)")
 
-            guard let lprojPath else { continue }
+            guard let localizedBundle else { continue }
 
+            let lprojPath = localizedBundle.bundlePath
             let stringsPath = (lprojPath as NSString)
                 .appendingPathComponent("LocalizationUI.strings")
             #expect(
@@ -82,9 +83,7 @@ struct LocalizationKitTests {
                 "Missing LocalizationUI.strings in \(language.rawValue).lproj"
             )
 
-            guard let bundle = Bundle(path: lprojPath) else { continue }
-
-            let languageLabel = bundle.localizedString(
+            let languageLabel = localizedBundle.localizedString(
                 forKey: "Language",
                 value: "__MISSING__",
                 table: "LocalizationUI"
@@ -197,5 +196,40 @@ struct LocalizationKitTests {
         )
         let ui = LocalizationLookup.kitUI(languageManager: manager)
         #expect(ui.trSync("Use System Language") == "Use System Language")
+    }
+
+    @Test func localizationLookupFallsBackToLowercasedLprojDirectory() throws {
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LocalizationKitTests.lowercaseLproj", isDirectory: true)
+        try? FileManager.default.removeItem(at: tempRoot)
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+
+        let bundleRoot = tempRoot.appendingPathComponent("TestStrings.bundle", isDirectory: true)
+        let lproj = bundleRoot.appendingPathComponent("zh-hans.lproj", isDirectory: true)
+        try FileManager.default.createDirectory(at: lproj, withIntermediateDirectories: true)
+
+        let strings = """
+        "Settings" = "设置";
+        """
+        try strings.write(
+            to: lproj.appendingPathComponent("Localizable.strings"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let defaults = UserDefaults(suiteName: "LocalizationKitTests.lowercaseLproj")!
+        defaults.removePersistentDomain(forName: "LocalizationKitTests.lowercaseLproj")
+        defaults.set(AppLanguage.chineseSimplified.rawValue, forKey: "test.lowercaseLproj")
+
+        let lookup = LocalizationLookup(
+            bundle: Bundle(path: bundleRoot.path)!,
+            defaultsKey: "test.lowercaseLproj",
+            configuration: bslMenu,
+            defaults: defaults
+        )
+
+        #expect(lookup.trSync("Settings") == "设置")
+
+        try? FileManager.default.removeItem(at: tempRoot)
     }
 }

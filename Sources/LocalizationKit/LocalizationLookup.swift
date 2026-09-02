@@ -139,19 +139,69 @@ public struct LocalizationLookup {
     }
 
     private func localizationBundle(for language: AppLanguage) -> Bundle {
-        if let path = bundle.path(forResource: language.rawValue, ofType: "lproj"),
-           let localized = Bundle(path: path) {
+        if let localized = localizedBundle(forLprojResourceName: language.rawValue) {
             return localized
         }
 
         let fallback = configuration.fallbackLanguage
         if fallback != language,
-           let path = bundle.path(forResource: fallback.rawValue, ofType: "lproj"),
-           let localized = Bundle(path: path) {
+           let localized = localizedBundle(forLprojResourceName: fallback.rawValue) {
             return localized
         }
 
         return bundle
+    }
+
+    /// Resolves an `*.lproj` bundle, tolerating SPM resource bundles that lowercase locale folder names.
+    ///
+    /// 1. `rawValue` via `path(forResource:ofType:)`
+    /// 2. lowercased `rawValue` via `path(forResource:ofType:)`
+    /// 3. lowercased `rawValue` + `.lproj` as a direct subdirectory under the bundle
+    private func localizedBundle(forLprojResourceName rawValue: String) -> Bundle? {
+        Self.localizedBundle(in: bundle, forLprojResourceName: rawValue)
+    }
+
+    static func localizedBundle(in bundle: Bundle, forLprojResourceName rawValue: String) -> Bundle? {
+        let lowercased = rawValue.lowercased()
+
+        if let path = bundle.path(forResource: rawValue, ofType: "lproj"),
+           let localized = Bundle(path: path) {
+            return localized
+        }
+
+        if lowercased != rawValue,
+           let path = bundle.path(forResource: lowercased, ofType: "lproj"),
+           let localized = Bundle(path: path) {
+            return localized
+        }
+
+        if let path = directLprojDirectoryPath(named: "\(lowercased).lproj", in: bundle),
+           let localized = Bundle(path: path) {
+            return localized
+        }
+
+        return nil
+    }
+
+    private static func directLprojDirectoryPath(named directoryName: String, in bundle: Bundle) -> String? {
+        let searchRoots = [bundle.resourcePath, bundle.bundlePath]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+
+        for root in searchRoots {
+            let path = (root as NSString).appendingPathComponent(directoryName)
+            var isDirectory: ObjCBool = false
+            if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
+               isDirectory.boolValue {
+                return path
+            }
+        }
+
+        return nil
+    }
+
+    private func directLprojDirectoryPath(named directoryName: String) -> String? {
+        Self.directLprojDirectoryPath(named: directoryName, in: bundle)
     }
 }
 
