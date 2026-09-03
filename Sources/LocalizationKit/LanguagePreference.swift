@@ -6,7 +6,7 @@
 import Foundation
 
 /// Explicit UI language preference. `system` follows the app language policy.
-public enum LanguagePreference: Equatable, Sendable {
+public enum LanguagePreference: Equatable, Hashable, Sendable {
     case system
     case explicit(AppLanguage)
 }

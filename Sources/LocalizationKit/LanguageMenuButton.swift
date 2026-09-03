@@ -14,6 +14,8 @@ public enum LanguageMenuButtonStyle: Sendable {
 }
 
 /// Language menu: use system language, then whitelisted supported languages.
+///
+/// On watchOS, SwiftUI `Menu` is unavailable, so this control uses a `Picker` instead.
 public struct LanguageMenuButton: View {
     @ObservedObject private var languageManager: LanguageManager
     private let style: LanguageMenuButtonStyle
@@ -29,6 +31,46 @@ public struct LanguageMenuButton: View {
     public var body: some View {
         let ui = LocalizationLookup.kitUI(languageManager: languageManager)
 
+        #if os(watchOS)
+        pickerControl(ui: ui)
+        #else
+        menuControl(ui: ui)
+        #endif
+    }
+
+    #if os(watchOS)
+    private var preferenceBinding: Binding<LanguagePreference> {
+        Binding(
+            get: { languageManager.preference },
+            set: { languageManager.select($0) }
+        )
+    }
+
+    @ViewBuilder
+    private func pickerControl(ui: LocalizationLookup) -> some View {
+        Picker(selection: preferenceBinding) {
+            Text(ui.trSync("Use System Language"))
+                .tag(LanguagePreference.system)
+
+            ForEach(languageManager.menuLanguages, id: \.rawValue) { language in
+                Text(language.displayName)
+                    .tag(LanguagePreference.explicit(language))
+            }
+        } label: {
+            buttonLabel(ui: ui)
+        }
+        .accessibilityLabel(Text("Language", bundle: ui.resolvedBundle))
+        .accessibilityHint(
+            Text(
+                "Choose the system language or a specific language for the app interface.",
+                bundle: ui.resolvedBundle
+            )
+        )
+        .accessibilityValue(Text(accessibilityValue(ui: ui)))
+    }
+    #else
+    @ViewBuilder
+    private func menuControl(ui: LocalizationLookup) -> some View {
         Menu {
             Button {
                 languageManager.select(.system)
@@ -64,6 +106,7 @@ public struct LanguageMenuButton: View {
         )
         .accessibilityValue(Text(accessibilityValue(ui: ui)))
     }
+    #endif
 
     @ViewBuilder
     private func buttonLabel(ui: LocalizationLookup) -> some View {
@@ -93,6 +136,7 @@ public struct LanguageMenuButton: View {
         return languageManager.resolvedLanguage.displayName
     }
 
+    #if !os(watchOS)
     @ViewBuilder
     private func menuRowLabel(title: String, selected: Bool) -> some View {
         if selected {
@@ -101,4 +145,5 @@ public struct LanguageMenuButton: View {
             Text(title)
         }
     }
+    #endif
 }

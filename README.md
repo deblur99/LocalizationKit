@@ -1,11 +1,14 @@
 # LocalizationKit
 
-Swift Package for in-app language switching on macOS and iOS. Provides a language catalog, preference persistence, explicit `*.lproj` bundle lookup, and a ready-made language menu UI.
+Swift Package for in-app language switching on Apple platforms. Provides a language catalog, preference persistence, explicit `*.lproj` bundle lookup, and a ready-made language menu UI.
 
 ## Requirements
 
 - macOS 13+
 - iOS 16+
+- watchOS 9+
+- tvOS 17+
+- visionOS 1+
 - Swift 5.9+
 
 ## Installation
@@ -14,7 +17,7 @@ Add LocalizationKit to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/deblur99/LocalizationKit", from: "1.3.0"),
+    .package(url: "https://github.com/deblur99/LocalizationKit", from: "1.3.1"),
 ],
 targets: [
     .target(
@@ -141,6 +144,8 @@ LanguageMenuButton(languageManager: languageManager, style: .menuLabel)
 
 `LanguageMenuButtonStyle.toolbarIcon` keeps a globe-only control for toolbars.
 `LanguageMenuButtonStyle.menuLabel` shows the current choice (`Use System Language` or a language display name); platform `Menu` chrome may supply a trailing chevron—do not add one manually unless a target OS omits it.
+
+On watchOS, `Menu` is unavailable, so `LanguageMenuButton` presents a `Picker` with the same options.
 
 ## Features
 
