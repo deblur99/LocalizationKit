@@ -14,7 +14,7 @@ Add LocalizationKit to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/deblur99/LocalizationKit", from: "1.2.0"),
+    .package(url: "https://github.com/deblur99/LocalizationKit", from: "1.3.0"),
 ],
 targets: [
     .target(
@@ -60,7 +60,11 @@ let languageManager = MyCoreLocalization.languageManager
 ContentView()
     .appLanguageEnvironment(MyCoreLocalization.self)
 
+// Toolbar / navigation bar (default)
 LanguageMenuButton(module: MyCoreLocalization.self)
+
+// Form / List: show the current selection (e.g. "한국어")
+LanguageMenuButton(module: MyCoreLocalization.self, style: .menuLabel)
 ```
 
 ### 3. Localized strings
@@ -128,8 +132,15 @@ Kit UI strings (language menu labels) ship in `LocalizationUI.strings` and are a
 ### 5. Add the language menu button
 
 ```swift
+// Toolbar icon (default)
 LanguageMenuButton(languageManager: languageManager)
+
+// Form / List label showing the current preference
+LanguageMenuButton(languageManager: languageManager, style: .menuLabel)
 ```
+
+`LanguageMenuButtonStyle.toolbarIcon` keeps a globe-only control for toolbars.
+`LanguageMenuButtonStyle.menuLabel` shows the current choice (`Use System Language` or a language display name); platform `Menu` chrome may supply a trailing chevron—do not add one manually unless a target OS omits it.
 
 ## Features
 
@@ -140,7 +151,7 @@ LanguageMenuButton(languageManager: languageManager)
 - **LanguagePreference** — `system` or explicit language, with legacy value migration
 - **LanguageMenuConfiguration** — per-app whitelist and fallback policy
 - **LocalizationLookup** — explicit `lproj` bundle selection for SPM modules
-- **LanguageMenuButton** — globe menu SwiftUI component
+- **LanguageMenuButton** / **LanguageMenuButtonStyle** — globe toolbar or Form label menu
 - **LocalizationDiagnostics** — DEBUG logging for invalid preferences (with suggestions)
 
 ## License

@@ -36,13 +36,22 @@ extension View {
 
 extension LanguageMenuButton {
     @MainActor
-    public init(configuration: AppLocalizationConfiguration) {
-        self.init(languageManager: configuration.languageManager())
+    public init(
+        configuration: AppLocalizationConfiguration,
+        style: LanguageMenuButtonStyle = .toolbarIcon
+    ) {
+        self.init(
+            languageManager: configuration.languageManager(),
+            style: style
+        )
     }
 
     @MainActor
-    public init<M: LocalizedModule>(module: M.Type) {
-        self.init(languageManager: M.languageManager)
+    public init<M: LocalizedModule>(
+        module: M.Type,
+        style: LanguageMenuButtonStyle = .toolbarIcon
+    ) {
+        self.init(languageManager: M.languageManager, style: style)
     }
 }
 
